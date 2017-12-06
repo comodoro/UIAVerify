@@ -16,10 +16,28 @@ before_build:
   - nuget restore
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
 
+after_build:
+  - 7z a UIAVerify.zip %APPVEYOR_BUILD_FOLDER%\bin\%CONFIGURATION%\*.*
+  
 build_script:
   - cmd: msbuild visualuiaverify.sln "/p:Configuration=%CONFIGURATION%;Platform=%PLATFORM%"
 
-  - cmd: GitLink . -u https://github.com/TestStack/UIAVerify -c %CONFIGURATION%
-
 cache:
   - packages -> **\packages.config
+  
+artifacts:
+  - path: UIAVerify.zip
+    name: Build
+    
+deploy:
+  release: uiaverify-v$(appveyor_build_version)
+  description: 'Latest'
+  provider: GitHub
+  auth_token:
+    secure: cvVbVuSRxxOFGsfsso0t/Yqmuu8qSVKJMbC8WN8bJIN+mZ0r2mwSRd+xTiCtj/kx # your encrypted token from GitHub
+  artifact: UIAVerify.zip
+  draft: true
+  prerelease: true
+  on:
+    branch: master                 # release from master branch only
+    appveyor_repo_tag: true        # deploy on tag push only
